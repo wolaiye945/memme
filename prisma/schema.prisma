@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  username        String
+  passwordHash    String
+  role            String   @default("USER") // USER, ADMIN
+  avatar          String?
+  storageQuota    BigInt   @default(1073741824) // 1GB in bytes
+  storageUsed     BigInt   @default(0)
+  settings        String   @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  memories        Memory[]
+  tags            Tag[]
+  compressionLogs CompressionLog[]
+  sharedMemories  SharedMemory[]
+}
+
+model Memory {
+  id           String     @id @default(uuid())
+  userId       String
+  title        String
+  content      String
+  type         String     @default("NOTE") // NOTE, SUMMARY, MILESTONE
+  sourceType   String     @default("TEXT") // TEXT, VOICE, IMAGE, FILE
+  attachments  String     @default("[]") // JSON array
+  aiSummary    String?
+  isCompressed Boolean    @default(false)
+  isDeleted    Boolean    @default(false)
+  parentId     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Memory?       @relation("MemoryHierarchy", fields: [parentId], references: [id])
+  children Memory[]      @relation("MemoryHierarchy")
+  tags     MemoryTag[]
+  shares   SharedMemory[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isCompressed])
+}
+
+model Tag {
+  id        String      @id @default(uuid())
+  name      String
+  color     String      @default("#3B82F6")
+  userId    String
+  createdAt DateTime    @default(now())
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memories MemoryTag[]
+
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+model MemoryTag {
+  memoryId String
+  tagId    String
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([memoryId, tagId])
+}
+
+model CompressionLog {
+  id              String   @id @default(uuid())
+  userId          String
+  period          String   // DAY, WEEK, MONTH, YEAR
+  startDate       DateTime
+  endDate         DateTime
+  originalCount   Int
+  compressedCount Int
+  summaryMemoryId String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SharedMemory {
+  id        String   @id @default(uuid())
+  memoryId  String
+  userId    String
+  shareCode String   @unique
+  expiresAt DateTime?
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([shareCode])
+}
