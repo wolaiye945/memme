@@ -36,6 +36,14 @@ function getConfig(): LLMConfig {
   }
 }
 
+function handleLLMError(error: any, context: string) {
+  if (error?.cause?.code === 'ECONNREFUSED') {
+    console.warn(`⚠️  ${context}: 连接被拒绝。请检查 LLM 服务是否已启动并运行在配置的端口上。`);
+  } else {
+    console.error(`${context} failed:`, error);
+  }
+}
+
 export async function generateTitleAndTags(content: string): Promise<{
   title: string;
   tags: string[];
@@ -63,7 +71,7 @@ ${content}
       return await callOpenAICompatible(config, prompt);
     }
   } catch (error) {
-    console.error('LLM call failed:', error);
+    handleLLMError(error, 'AI Title/Tag Generation');
     // Fallback: generate simple title and tags
     return {
       title: content.slice(0, 20) + (content.length > 20 ? '...' : ''),
@@ -84,7 +92,7 @@ export async function summarizeImage(base64Image: string, mimeType: string): Pro
       return await callOpenAIVision(config, prompt, base64Image, mimeType);
     }
   } catch (error) {
-    console.error('Vision API call failed:', error);
+    handleLLMError(error, 'AI Image Analysis');
     return '图片内容识别失败，请手动添加描述。';
   }
 }
@@ -112,7 +120,7 @@ ${memoriesText}
       return typeof response === 'string' ? response : JSON.stringify(response);
     }
   } catch (error) {
-    console.error('Compression failed:', error);
+    handleLLMError(error, 'AI Memory Compression');
     return `本周期共有${memories.length}条记忆，AI摘要生成失败。`;
   }
 }

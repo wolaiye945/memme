@@ -7,6 +7,8 @@ interface User {
   username: string;
   role: 'USER' | 'ADMIN';
   avatar?: string;
+  storageQuota?: string;
+  storageUsed?: string;
 }
 
 interface AuthState {

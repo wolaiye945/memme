@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import { cn } from '../../lib/utils';
+import { cn, formatBytes } from '../../lib/utils';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuthStore();
@@ -13,6 +13,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     logout();
     navigate('/login');
   };
+
+  const used = user?.storageUsed ? Number(user.storageUsed) : 0;
+  const quota = user?.storageQuota ? Number(user.storageQuota) : 0;
+  const percentage = quota > 0 ? Math.min((used / quota) * 100, 100) : 0;
 
   const navItems = [
     { label: '记忆列表', path: '/' },
@@ -50,7 +54,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
               <div className="ml-3 relative flex items-center gap-4">
-                <span className="text-sm text-gray-700">{user?.username}</span>
+                <div className="flex flex-col items-end mr-2">
+                  <span className="text-sm text-gray-700 font-medium">{user?.username}</span>
+                  <div className="flex items-center gap-2" title={`已用 ${formatBytes(used)} / ${formatBytes(quota)}`}>
+                    <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full rounded-full transition-all duration-500", percentage > 90 ? "bg-red-500" : "bg-primary-500")} 
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">{formatBytes(used)}</span>
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     // Handle export

@@ -87,6 +87,8 @@ router.post('/login', async (req, res, next) => {
           username: user.username,
           role: user.role,
           avatar: user.avatar,
+          storageQuota: user.storageQuota.toString(),
+          storageUsed: user.storageUsed.toString(),
         },
         token,
         refreshToken,

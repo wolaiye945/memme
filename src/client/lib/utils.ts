@@ -14,3 +14,12 @@ export function formatDate(date: string | Date) {
     minute: '2-digit'
   })
 }
+
+export function formatBytes(bytes: number | string, decimals = 2) {
+  if (!bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(Number(bytes)) / Math.log(k));
+  return `${parseFloat((Number(bytes) / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
